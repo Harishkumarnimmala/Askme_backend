@@ -1,0 +1,42 @@
+version: '3.5'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: backend:latest
+    container_name: backend-llm # Added for easier container identification
+    restart: unless-stopped      # Added for better container management
+    volumes:
+      - .:/app
+    network_mode: host
+    #ports:
+    #  - "2000:2000"  # host 2000: container port 2000
+   
+    # GPU Configuration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    #runtime: nvidia
+    environment:
+      - FRONTEND_URL="http://localhost:3000"
+    
+    command: ["python","main.py"]
+
+    healthcheck:  # Added health check
+      test: ["CMD", "curl", "-f", "http://localhost:2000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    logging:      # Added logging configuration
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
